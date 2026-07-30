@@ -1,4 +1,4 @@
 lectures/
 __pycache__/
 *.pyc
-
+.vscode/
