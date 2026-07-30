@@ -1,2 +1,2 @@
 def greet(name):
-    return f"Hi {name}, welcome to GitHub Practice!"
+    return f"Hello {name}, welcome to ASE Git Assignment!"
