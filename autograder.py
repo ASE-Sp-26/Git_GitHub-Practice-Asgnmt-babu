@@ -59,10 +59,13 @@ def check_task_1():
         
         if not name or "YOUR NAME" in name.upper():
             feedback.append("FAIL: 'full_name' field is not updated in student_info.json.")
+            return 0, feedback
         elif not sid or "YOUR STUDENT ID" in sid.upper():
             feedback.append("FAIL: 'student_id' field is not updated in student_info.json.")
+            return 0, feedback
         elif not gh_user or "YOUR GITHUB USERNAME" in gh_user.upper():
             feedback.append("FAIL: 'github_username' field is not updated in student_info.json.")
+            return 0, feedback
         else:
             score += 10
             feedback.append(f"PASS: student_info.json valid ({name}, {sid}, @{gh_user}).")
