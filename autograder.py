@@ -176,16 +176,20 @@ def check_task_4():
     if has_conflict_markers:
         feedback.append("FAIL: src/app.py contains unresolved merge conflict markers (<<<<<<<, =======, >>>>>>>).")
         return 0, feedback
-    
-    score += 5
-    feedback.append("PASS: src/app.py is free of merge conflict markers.")
 
-    stdout, _, _ = run_cmd("git log --oneline")
-    if "merge" in stdout.lower() or "conflict" in stdout.lower() or len(stdout.splitlines()) > 3:
+    stdout_branches, _, _ = run_cmd("git branch -a")
+    if "feature/conflict-fix" in stdout_branches:
         score += 5
-        feedback.append("PASS: Git log indicates branch merge activity.")
+        feedback.append("PASS: Branch 'feature/conflict-fix' detected.")
     else:
-        feedback.append("WARN: Merge commit message not explicitly found in git log.")
+        feedback.append("FAIL: Branch 'feature/conflict-fix' not found.")
+
+    stdout_log, _, _ = run_cmd("git log --oneline")
+    if "resolve merge conflict" in stdout_log.lower() or "merge" in stdout_log.lower() or "conflict" in stdout_log.lower():
+        score += 5
+        feedback.append("PASS: Conflict resolution commit found in git log.")
+    else:
+        feedback.append("FAIL: Merge conflict resolution commit not found in git log.")
 
     try:
         spec = importlib.util.spec_from_file_location("app", app_path)
