@@ -3,3 +3,7 @@ lectures/
 *.log
 temp/
 lectures/
+
+*.log
+temp/
+lectures/
