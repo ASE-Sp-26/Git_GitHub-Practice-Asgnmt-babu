@@ -103,18 +103,18 @@ def check_task_2():
     if len(found_patterns) >= 2:
         score += 10
         feedback.append(f"PASS: .gitignore contains required ignore patterns: {', '.join(found_patterns)}")
-    else:
-        feedback.append(f"FAIL: .gitignore missing rules for *.log, temp/, or lectures/.")
         
-    stdout, _, _ = run_cmd("git ls-files")
-    tracked_files = stdout.splitlines()
-    log_files_tracked = [f for f in tracked_files if f.endswith(".log") or f.startswith("temp/")]
-    
-    if len(log_files_tracked) == 0:
-        score += 5
-        feedback.append("PASS: No temporary or log files are tracked in Git.")
+        stdout, _, _ = run_cmd("git ls-files")
+        tracked_files = stdout.splitlines()
+        log_files_tracked = [f for f in tracked_files if f.endswith(".log") or f.startswith("temp/")]
+        
+        if len(log_files_tracked) == 0:
+            score += 5
+            feedback.append("PASS: No temporary or log files are tracked in Git.")
+        else:
+            feedback.append(f"FAIL: Prohibited files tracked in Git: {log_files_tracked}")
     else:
-        feedback.append(f"FAIL: Prohibited files tracked in Git: {log_files_tracked}")
+        feedback.append("FAIL: .gitignore missing rules for *.log, temp/, or lectures/.")
         
     return score, feedback
 
@@ -178,35 +178,40 @@ def check_task_4():
         return 0, feedback
 
     stdout_branches, _, _ = run_cmd("git branch -a")
-    if "feature/conflict-fix" in stdout_branches:
+    has_branch = "feature/conflict-fix" in stdout_branches
+    if has_branch:
         score += 5
         feedback.append("PASS: Branch 'feature/conflict-fix' detected.")
     else:
         feedback.append("FAIL: Branch 'feature/conflict-fix' not found.")
 
     stdout_log, _, _ = run_cmd("git log --oneline")
-    if "resolve merge conflict" in stdout_log.lower() or "merge" in stdout_log.lower() or "conflict" in stdout_log.lower():
+    has_merge_commit = "resolve merge conflict" in stdout_log.lower() or "merge" in stdout_log.lower() or "conflict" in stdout_log.lower()
+    if has_merge_commit:
         score += 5
         feedback.append("PASS: Conflict resolution commit found in git log.")
     else:
         feedback.append("FAIL: Merge conflict resolution commit not found in git log.")
 
-    try:
-        spec = importlib.util.spec_from_file_location("app", app_path)
-        app = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(app)
-        
-        if hasattr(app, 'greet'):
-            output = app.greet("Alice")
-            if isinstance(output, str) and len(output) > 0:
-                score += 10
-                feedback.append(f"PASS: app.py executes cleanly and greet() returned: '{output}'.")
+    if has_branch and has_merge_commit:
+        try:
+            spec = importlib.util.spec_from_file_location("app", app_path)
+            app = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(app)
+            
+            if hasattr(app, 'greet'):
+                output = app.greet("Alice")
+                if isinstance(output, str) and len(output) > 0:
+                    score += 10
+                    feedback.append(f"PASS: app.py executes cleanly and greet() returned: '{output}'.")
+                else:
+                    feedback.append("FAIL: greet() did not return a valid string.")
             else:
-                feedback.append("FAIL: greet() did not return a valid string.")
-        else:
-            feedback.append("FAIL: greet() function missing in src/app.py.")
-    except Exception as e:
-        feedback.append(f"FAIL: Error running src/app.py: {str(e)}")
+                feedback.append("FAIL: greet() function missing in src/app.py.")
+        except Exception as e:
+            feedback.append(f"FAIL: Error running src/app.py: {str(e)}")
+    else:
+        feedback.append("FAIL: app.py execution test skipped until branch and merge conflict resolution are completed.")
         
     return score, feedback
 
