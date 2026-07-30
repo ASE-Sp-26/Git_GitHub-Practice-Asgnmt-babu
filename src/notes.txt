@@ -1,0 +1,8 @@
+# Assignment Notes & Release Checklist
+
+[x] Task 1: Student info added
+[x] Task 2: Gitignore updated
+[x] Task 3: Calculator implemented
+[x] Task 4: Merge conflict resolved
+[x] Task 5: Stash applied and release tagged v1.0.0
+[x] Task 6: GitHub reflection completed
