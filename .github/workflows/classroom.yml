@@ -27,6 +27,3 @@ jobs:
 
       - name: Run Autograder
         run: python autograder.py
-
-      - name: Autograding Reporter
-        uses: education/autograding-github-action@v1
