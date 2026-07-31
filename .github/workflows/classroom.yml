@@ -26,7 +26,7 @@ jobs:
           python-version: '3.x'
 
       - name: 'Task 1: Git Config & Student Info'
-        id: task-1
+        id: task1
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: 'Task 1: Git Config & Student Info'
@@ -35,7 +35,7 @@ jobs:
           max-score: 15
 
       - name: 'Task 2: .gitignore Configuration'
-        id: task-2
+        id: task2
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: 'Task 2: .gitignore Configuration'
@@ -44,7 +44,7 @@ jobs:
           max-score: 15
 
       - name: 'Task 3: Branching & Feature Calculator'
-        id: task-3
+        id: task3
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: 'Task 3: Branching & Feature Calculator'
@@ -53,7 +53,7 @@ jobs:
           max-score: 20
 
       - name: 'Task 4: Merge Conflict Resolution'
-        id: task-4
+        id: task4
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: 'Task 4: Merge Conflict Resolution'
@@ -62,7 +62,7 @@ jobs:
           max-score: 20
 
       - name: 'Task 5: Git Stashing & Tagging v1.0.0'
-        id: task-5
+        id: task5
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: 'Task 5: Git Stashing & Tagging v1.0.0'
@@ -71,7 +71,7 @@ jobs:
           max-score: 15
 
       - name: 'Task 6: GitHub Reflection & Workflow'
-        id: task-6
+        id: task6
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: 'Task 6: GitHub Reflection & Workflow'
@@ -83,4 +83,4 @@ jobs:
         uses: classroom-resources/autograding-grading-reporter@v1
         if: ${{ always() }}
         with:
-          runners: task-1, task-2, task-3, task-4, task-5, task-6
+          runners: task1,task2,task3,task4,task5,task6
