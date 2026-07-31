@@ -298,6 +298,7 @@ def main():
     total_score = 0
     max_possible = 0
 
+    results_summary = []
     for num, (title, checker) in task_checkers.items():
         if target_task is not None and num != target_task:
             continue
@@ -306,6 +307,7 @@ def main():
         max_possible += max_pts
         score, feedback = checker()
         total_score += score
+        results_summary.append((title, score, max_pts, feedback))
         
         status_color = Colors.GREEN if score == max_pts else (Colors.YELLOW if score > 0 else Colors.RED)
         print(f"{Colors.BOLD}{title}{Colors.RESET}")
@@ -318,6 +320,24 @@ def main():
     final_color = Colors.GREEN if total_score == max_possible else Colors.YELLOW
     print(f"{Colors.BOLD}TOTAL SCORE: {final_color}{total_score} / {max_possible} pts{Colors.RESET}")
     print(f"{Colors.BOLD}--------------------------------------------------{Colors.RESET}\n")
+
+    summary_file = os.getenv("GITHUB_STEP_SUMMARY")
+    if summary_file:
+        try:
+            with open(summary_file, "a", encoding="utf-8") as f:
+                f.write("### 📊 Git & GitHub Practice Assignment — Grade Summary\n\n")
+                f.write("| Task | Status | Score | Feedback |\n")
+                f.write("| :--- | :---: | :---: | :--- |\n")
+                for title, score, max_pts, feedback in results_summary:
+                    status = "✅ PASS" if score == max_pts else ("⚠️ PARTIAL" if score > 0 else "❌ FAIL")
+                    fb_str = "<br>".join(feedback)
+                    f.write(f"| **{title}** | {status} | **{score} / {max_pts} pts** | {fb_str} |\n")
+                
+                final_status = "✅ PASS" if total_score == max_possible else "⚠️ INCOMPLETE"
+                pct = int((total_score / max_possible) * 100) if max_possible > 0 else 0
+                f.write(f"| **TOTAL SCORE** | **{final_status}** | **{total_score} / {max_possible} pts** | **Grade: {pct}%** |\n\n")
+        except Exception:
+            pass
 
     if total_score < max_possible:
         sys.exit(1)
