@@ -81,6 +81,6 @@ jobs:
 
       - name: Autograding Reporter
         uses: classroom-resources/autograding-grading-reporter@v1
+        if: ${{ always() }}
         with:
-          runners: "task-1,task-2,task-3,task-4,task-5,task-6"
-
+          runners: task-1, task-2, task-3, task-4, task-5, task-6
