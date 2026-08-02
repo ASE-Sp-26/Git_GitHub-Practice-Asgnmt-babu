@@ -3,7 +3,7 @@
 Zero-Disk-Space API-Based Moodle Gradebook Generator
 Course: Advanced Software Engineering (ASE)
 
-Fetches student information and autograder grades directly from GitHub REST API over HTTPS
+Fetches student information and itemized autograder task grades directly from GitHub REST API over HTTPS
 without cloning any repositories or consuming disk space.
 
 Usage:
@@ -19,7 +19,6 @@ import urllib.request
 import urllib.error
 
 def get_gh_token():
-    """Attempt to retrieve GitHub authentication token from environment or gh CLI."""
     token = os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN")
     if token:
         return token
@@ -32,13 +31,11 @@ def get_gh_token():
     return None
 
 def fetch_api(url, token=None):
-    """Make authenticated GET request to GitHub REST API."""
     req = urllib.request.Request(url)
     req.add_header("User-Agent", "ASE-Autograder-Report-Tool")
     req.add_header("Accept", "application/vnd.github.v3+json")
     if token:
         req.add_header("Authorization", f"token {token}")
-    
     try:
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status in [200, 201]:
@@ -48,7 +45,6 @@ def fetch_api(url, token=None):
     return None
 
 def fetch_raw_content(repo_full_name, file_path, token=None):
-    """Fetch raw file content (e.g. student_info.json) from GitHub repo via API."""
     raw_url = f"https://raw.githubusercontent.com/{repo_full_name}/main/{file_path}"
     req = urllib.request.Request(raw_url)
     req.add_header("User-Agent", "ASE-Autograder-Report-Tool")
@@ -105,9 +101,8 @@ def main():
     print(f"Fetching student repos via GitHub REST API...\n")
 
     records = []
-    
-    # 1. Try gh CLI repo listing first (fastest and handles auth automatically)
     target_repos = []
+    
     try:
         cmd = f'gh repo list {org_name} --limit 200 --json name,fullName,htmlUrl'
         res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -124,7 +119,6 @@ def main():
     except Exception:
         pass
 
-    # 2. Fallback to direct REST API if gh CLI not available
     if not target_repos:
         api_url = f"https://api.github.com/orgs/{org_name}/repos?per_page=100"
         repos_data = fetch_api(api_url, token)
@@ -138,9 +132,7 @@ def main():
                         "html_url": r.get("html_url")
                     })
 
-    # 3. Fallback to local directory scanning if offline
     if not target_repos:
-        print("API list empty or unauthenticated. Scanning local directories...")
         local_dir = "Student-testing" if os.path.exists("Student-testing") else "."
         for root, dirs, files in os.walk(local_dir):
             if "student_info.json" in files and "autograder.py" in files:
@@ -168,7 +160,6 @@ def main():
         sid = "UNKNOWN-ID"
         gh_user = r_name.replace(f"{assignment_prefix}-", "")
 
-        # Fetch student_info.json
         info_json = None
         if local_path:
             try:
@@ -189,23 +180,57 @@ def main():
             sid = str(info_json.get("student_id", sid)).strip()
             gh_user = str(info_json.get("github_username", gh_user)).strip()
 
-        # Fetch autograder run status or execute locally if path exists
-        task_scores = {1: 15, 2: 15, 3: 20, 4: 20, 5: 15, 6: 15}
-        total_score = 100
+        task_scores = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
+        task_weights = {1: 15, 2: 15, 3: 20, 4: 20, 5: 15, 6: 15}
         
-        # Check latest workflow run status via API
         if not local_path:
             runs_url = f"https://api.github.com/repos/{full_name}/actions/runs?per_page=1"
             runs_data = fetch_api(runs_url, token)
             if runs_data and "workflow_runs" in runs_data and len(runs_data["workflow_runs"]) > 0:
                 latest_run = runs_data["workflow_runs"][0]
-                conclusion = latest_run.get("conclusion")
-                if conclusion != "success":
-                    # If CI run failed or partial
-                    total_score = 0
-                    for k in task_scores:
-                        task_scores[k] = 0
+                jobs_url = latest_run.get("jobs_url")
+                if jobs_url:
+                    jobs_data = fetch_api(jobs_url, token)
+                    if jobs_data and "jobs" in jobs_data and len(jobs_data["jobs"]) > 0:
+                        job_steps = jobs_data["jobs"][0].get("steps", [])
+                        for step in job_steps:
+                            step_name = step.get("name", "")
+                            step_conclusion = step.get("conclusion")
+                            
+                            for task_num in range(1, 7):
+                                if f"Task {task_num}" in step_name:
+                                    if step_conclusion == "success":
+                                        task_scores[task_num] = task_weights[task_num]
+                                    else:
+                                        task_scores[task_num] = 0
+        else:
+            import importlib.util
+            old_cwd = os.getcwd()
+            os.chdir(local_path)
+            try:
+                spec = importlib.util.spec_from_file_location("local_autograder", "autograder.py")
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                checkers = {
+                    1: getattr(mod, "check_task_1", None),
+                    2: getattr(mod, "check_task_2", None),
+                    3: getattr(mod, "check_task_3", None),
+                    4: getattr(mod, "check_task_4", None),
+                    5: getattr(mod, "check_task_5", None),
+                    6: getattr(mod, "check_task_6", None),
+                }
+                for num, func in checkers.items():
+                    if func:
+                        try:
+                            score, _ = func()
+                            task_scores[num] = int(score)
+                        except Exception:
+                            task_scores[num] = 0
+            except Exception:
+                pass
+            os.chdir(old_cwd)
 
+        total_score = sum(task_scores.values())
         pct = f"{int(total_score)}%"
         status = "PASSED" if total_score == 100 else ("PARTIAL" if total_score > 0 else "FAILED")
 
@@ -227,7 +252,6 @@ def main():
 
         print(f"  ✔ Student: {student_name:20s} | ID: {sid:12s} | Score: {total_score:3d}/100 pts | Repo: {html_url}")
 
-    # Export Moodle CSV
     with open(moodle_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(moodle_headers)
