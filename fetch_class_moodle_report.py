@@ -103,7 +103,7 @@ def main():
     records = []
     target_repos = []
     
-    # Query organization repos
+    # Query organization repos via gh CLI
     try:
         cmd = f'gh repo list {org_name} --limit 200 --json name,fullName,htmlUrl,isTemplate'
         res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -112,7 +112,6 @@ def main():
             for r in repos_data:
                 r_name = r.get("name", "")
                 is_tpl = r.get("isTemplate", False)
-                # Exclude template repos and match student repo prefix
                 if not is_tpl and r_name.lower() != "git_github-practice-asgnmt" and (r_name.startswith(f"{assignment_prefix}-") or r_name.startswith("git-github-prac-asignment-")):
                     target_repos.append({
                         "name": r_name,
@@ -122,6 +121,7 @@ def main():
     except Exception:
         pass
 
+    # Query via REST API
     if not target_repos:
         api_url = f"https://api.github.com/orgs/{org_name}/repos?per_page=100"
         repos_data = fetch_api(api_url, token)
@@ -136,9 +136,10 @@ def main():
                         "html_url": r.get("html_url")
                     })
 
-    if not target_repos:
-        local_dir = "Student-testing" if os.path.exists("Student-testing") else "."
-        for root, dirs, files in os.walk(local_dir):
+    # Local directory scanning fallback
+    if not target_repos and os.path.exists("Student-testing"):
+        print("Scanning local Student-testing directory...")
+        for root, dirs, files in os.walk("Student-testing"):
             if "student_info.json" in files and "autograder.py" in files:
                 r_name = os.path.basename(os.path.abspath(root))
                 target_repos.append({
@@ -149,7 +150,8 @@ def main():
                 })
 
     if not target_repos:
-        print(f"No student repositories found matching prefix '{assignment_prefix}-' in '{org_name}'.")
+        print(f"⚠️ No student repositories found matching prefix '{assignment_prefix}-' in '{org_name}'.")
+        print("Tip: If running in GitHub Codespaces, please run 'gh auth login' once to grant organization read access.")
         return
 
     print(f"Found {len(target_repos)} student repository/repositories matching assignment.\n")
@@ -183,6 +185,10 @@ def main():
             student_name = str(info_json.get("full_name", student_name)).strip()
             sid = str(info_json.get("student_id", sid)).strip()
             gh_user = str(info_json.get("github_username", gh_user)).strip()
+
+        # Strict check: Skip un-edited placeholder template records
+        if student_name == "YOUR NAME HERE" or sid == "YOUR STUDENT ID HERE" or r_name.lower() == "git_github-practice-asgnmt":
+            continue
 
         task_scores = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
         task_weights = {1: 15, 2: 15, 3: 20, 4: 20, 5: 15, 6: 15}
@@ -255,6 +261,10 @@ def main():
         ])
 
         print(f"  ✔ Student: {student_name:20s} | ID: {sid:12s} | Score: {total_score:3d}/100 pts | Repo: {html_url}")
+
+    if not records:
+        print("⚠️ No valid student records found. If running in Codespaces, please run 'gh auth login' once to allow API listing.")
+        return
 
     with open(moodle_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
