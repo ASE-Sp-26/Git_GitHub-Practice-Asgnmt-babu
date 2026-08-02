@@ -103,14 +103,17 @@ def main():
     records = []
     target_repos = []
     
+    # Query organization repos
     try:
-        cmd = f'gh repo list {org_name} --limit 200 --json name,fullName,htmlUrl'
+        cmd = f'gh repo list {org_name} --limit 200 --json name,fullName,htmlUrl,isTemplate'
         res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if res.returncode == 0:
             repos_data = json.loads(res.stdout)
             for r in repos_data:
                 r_name = r.get("name", "")
-                if r_name.startswith(f"{assignment_prefix}-") or r_name == assignment_prefix:
+                is_tpl = r.get("isTemplate", False)
+                # Exclude template repos and match student repo prefix
+                if not is_tpl and r_name.lower() != "git_github-practice-asgnmt" and (r_name.startswith(f"{assignment_prefix}-") or r_name.startswith("git-github-prac-asignment-")):
                     target_repos.append({
                         "name": r_name,
                         "full_name": r.get("fullName", f"{org_name}/{r_name}"),
@@ -125,7 +128,8 @@ def main():
         if isinstance(repos_data, list):
             for r in repos_data:
                 r_name = r.get("name", "")
-                if r_name.startswith(f"{assignment_prefix}-") or r_name == assignment_prefix:
+                is_tpl = r.get("is_template", False)
+                if not is_tpl and r_name.lower() != "git_github-practice-asgnmt" and (r_name.startswith(f"{assignment_prefix}-") or r_name.startswith("git-github-prac-asignment-")):
                     target_repos.append({
                         "name": r_name,
                         "full_name": r.get("full_name"),
