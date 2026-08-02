@@ -102,15 +102,13 @@ jobs:
       with:
         runners: task-1-git-config-student-info,task-2-gitignore-configuration,task-3-branching-feature-calculator,task-4-merge-conflict-resolution,task-5-git-stashing-tagging-v1-0-0,task-6-github-reflection-workflow
 
-    - name: Generate Individual PDF & Moodle Reports
+    - name: Generate Individual PDF Report
       if: ${{ always() }}
       run: python generate_class_reports.py
 
-    - name: Upload PDF Evaluation Reports & Moodle Gradebook
+    - name: Upload Student Evaluation PDF
       uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
-        name: student-evaluation-reports
-        path: |
-          evaluation_reports/*.pdf
-          moodle_consolidated_grades.csv
+        name: student-evaluation-pdf
+        path: evaluation_reports/*.pdf

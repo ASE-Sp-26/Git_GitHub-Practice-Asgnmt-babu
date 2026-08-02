@@ -15,142 +15,149 @@ import os
 import sys
 import json
 import csv
-import subprocess
+import re
 import datetime
+import importlib.util
 
-class SimplePDFWriter:
-    """Zero-dependency, pure-Python PDF 1.4 Document Generator."""
+class RobustPDFWriter:
+    """Zero-dependency, pure-Python valid PDF 1.4 Document Generator."""
     def __init__(self, filename):
         self.filename = filename
-        self.objects = []
-        self.offsets = []
-        self.stream = bytearray()
-        
-    def _add_object(self, content):
-        offset = len(self.stream)
-        self.offsets.append(offset)
-        obj_id = len(self.offsets)
-        obj_str = f"{obj_id} 0 obj\n{content}\nendobj\n"
-        self.stream.extend(obj_str.encode('utf-8'))
-        return obj_id
 
     def build_student_pdf(self, name, sid, gh_user, task_data, total_score, max_possible):
-        # Reset stream
-        self.stream = bytearray()
-        self.offsets = []
-        self.stream.extend(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
-
         pct = int((total_score / max_possible) * 100) if max_possible > 0 else 0
         status_str = "PASSED" if total_score == max_possible else ("PARTIAL" if total_score > 0 else "FAILED")
         date_str = datetime.datetime.now().strftime("%B %d, %Y")
 
-        # Build Page Content Stream
-        text_ops = []
+        # PDF Primitive Commands
+        stream_cmds = []
         
-        # Header Title
-        text_ops.append("BT /F1 18 Tf 50 750 Td (Advanced Software Engineering - Student Evaluation Report) Tj ET")
-        text_ops.append("BT /F2 10 Tf 50 735 Td (Course Code: ASE-Sp26 | Topic: Git & GitHub Practice Assignment) Tj ET")
+        # Header Box
+        stream_cmds.append("0.1 0.2 0.4 rg 40 730 532 45 re f")
+        stream_cmds.append("BT /F1 16 Tf 1 1 1 rg 55 754 Td (Advanced Software Engineering - Evaluation Report) Tj ET")
+        stream_cmds.append("BT /F2 9 Tf 0.9 0.9 0.9 rg 55 738 Td (Course Code: ASE-Sp26 | Assignment: Git & GitHub Practice) Tj ET")
+
+        # Student Details Box
+        stream_cmds.append("0.96 0.96 0.98 rg 40 650 532 65 re f")
+        stream_cmds.append("0.8 0.8 0.85 RG 1 w 40 650 532 65 re s")
         
-        # Divider line 1
-        text_ops.append("0.7 0.7 0.7 RG 1 w 50 725 m 550 725 l S")
+        stream_cmds.append("BT /F1 10 Tf 0 0 0 rg 55 695 Td (Student Name:) Tj ET")
+        stream_cmds.append(f"BT /F2 10 Tf 0.2 0.2 0.2 rg 150 695 Td ({self._clean(name)}) Tj ET")
+        stream_cmds.append("BT /F1 10 Tf 0 0 0 rg 330 695 Td (Student ID:) Tj ET")
+        stream_cmds.append(f"BT /F2 10 Tf 0.2 0.2 0.2 rg 420 695 Td ({self._clean(sid)}) Tj ET")
 
-        # Student Information Box
-        text_ops.append("0.95 0.95 0.98 rg 50 645 500 70 re f")
-        text_ops.append("0.8 0.8 0.85 RG 1 w 50 645 500 70 re s")
-        
-        text_ops.append(f"BT /F1 11 Tf 65 698 Td (Student Name:) Tj ET")
-        text_ops.append(f"BT /F2 11 Tf 165 698 Td ({self._escape(name)}) Tj ET")
-        text_ops.append(f"BT /F1 11 Tf 320 698 Td (Student ID:) Tj ET")
-        text_ops.append(f"BT /F2 11 Tf 410 698 Td ({self._escape(sid)}) Tj ET")
+        stream_cmds.append("BT /F1 10 Tf 0 0 0 rg 55 668 Td (GitHub Username:) Tj ET")
+        stream_cmds.append(f"BT /F2 10 Tf 0.2 0.2 0.2 rg 150 668 Td (@{self._clean(gh_user)}) Tj ET")
+        stream_cmds.append("BT /F1 10 Tf 0 0 0 rg 330 668 Td (Date Evaluated:) Tj ET")
+        stream_cmds.append(f"BT /F2 10 Tf 0.2 0.2 0.2 rg 420 668 Td ({date_str}) Tj ET")
 
-        text_ops.append(f"BT /F1 11 Tf 65 675 Td (GitHub Username:) Tj ET")
-        text_ops.append(f"BT /F2 11 Tf 165 675 Td (@{self._escape(gh_user)}) Tj ET")
-        text_ops.append(f"BT /F1 11 Tf 320 675 Td (Date Evaluated:) Tj ET")
-        text_ops.append(f"BT /F2 11 Tf 410 675 Td ({date_str}) Tj ET")
-
-        # Grade Scorecard Box
+        # Final Scorecard Box
         if status_str == "PASSED":
-            text_ops.append("0.90 0.97 0.90 rg 50 575 500 55 re f")
-            text_ops.append("0.3 0.7 0.3 RG 1.5 w 50 575 500 55 re s")
-            score_color = "0.1 0.5 0.1 rg"
+            stream_cmds.append("0.9 0.96 0.9 rg 40 580 532 55 re f")
+            stream_cmds.append("0.2 0.6 0.2 RG 1.5 w 40 580 532 55 re s")
+            stream_cmds.append(f"BT /F1 13 Tf 0.1 0.4 0.1 rg 55 605 Td (FINAL GRADE: {total_score} / {max_possible} Points \({pct}%\)) Tj ET")
+            stream_cmds.append(f"BT /F1 13 Tf 0.1 0.4 0.1 rg 420 605 Td (STATUS: PASSED) Tj ET")
         else:
-            text_ops.append("0.98 0.92 0.92 rg 50 575 500 55 re f")
-            text_ops.append("0.8 0.3 0.3 RG 1.5 w 50 575 500 55 re s")
-            score_color = "0.7 0.1 0.1 rg"
-
-        text_ops.append(f"BT /F1 14 Tf 65 608 Td (FINAL GRADE:) Tj ET")
-        text_ops.append(f"BT /F1 16 Tf 170 608 Td ({total_score} / {max_possible} Points  \({pct}%\)) Tj ET")
-        text_ops.append(f"BT /F1 14 Tf 420 608 Td (STATUS: {status_str}) Tj ET")
+            stream_cmds.append("0.98 0.91 0.91 rg 40 580 532 55 re f")
+            stream_cmds.append("0.7 0.2 0.2 RG 1.5 w 40 580 532 55 re s")
+            stream_cmds.append(f"BT /F1 13 Tf 0.6 0.1 0.1 rg 55 605 Td (FINAL GRADE: {total_score} / {max_possible} Points \({pct}%\)) Tj ET")
+            stream_cmds.append(f"BT /F1 13 Tf 0.6 0.1 0.1 rg 420 605 Td (STATUS: {status_str}) Tj ET")
 
         # Task Breakdown Header
-        text_ops.append("BT /F1 13 Tf 50 545 Td (Task Breakdown & Autograder Feedback:) Tj ET")
+        stream_cmds.append("BT /F1 12 Tf 0 0 0 rg 40 550 Td (Task Breakdown & Feedback:) Tj ET")
         
         # Table Header Box
-        text_ops.append("0.2 0.3 0.5 rg 50 515 500 22 re f")
-        text_ops.append("BT /F1 10 Tf 60 522 Td (Task Name) Tj ET")
-        text_ops.append("BT /F1 10 Tf 330 522 Td (Score) Tj ET")
-        text_ops.append("BT /F1 10 Tf 430 522 Td (Status) Tj ET")
+        stream_cmds.append("0.2 0.3 0.5 rg 40 520 532 20 re f")
+        stream_cmds.append("BT /F1 9 Tf 1 1 1 rg 50 526 Td (Task Title) Tj ET")
+        stream_cmds.append("BT /F1 9 Tf 1 1 1 rg 340 526 Td (Score) Tj ET")
+        stream_cmds.append("BT /F1 9 Tf 1 1 1 rg 450 526 Td (Status) Tj ET")
 
-        y = 485
+        y = 490
         for t_title, score, max_pts, feedback in task_data:
             t_status = "PASS" if score == max_pts else ("PARTIAL" if score > 0 else "FAIL")
             
-            # Row background
-            text_ops.append(f"0.97 0.97 0.97 rg 50 {y-5} 500 25 re f")
-            text_ops.append(f"0.85 0.85 0.85 RG 0.5 w 50 {y-5} 500 25 re s")
+            # Row Background
+            stream_cmds.append(f"0.97 0.97 0.97 rg 40 {y-5} 532 25 re f")
+            stream_cmds.append(f"0.85 0.85 0.85 RG 0.5 w 40 {y-5} 532 25 re s")
 
-            text_ops.append(f"BT /F1 9 Tf 60 {y+5} Td ({self._escape(t_title)}) Tj ET")
-            text_ops.append(f"BT /F2 9 Tf 335 {y+5} Td ({score}/{max_pts} pts) Tj ET")
-            text_ops.append(f"BT /F1 9 Tf 435 {y+5} Td ({t_status}) Tj ET")
+            stream_cmds.append(f"BT /F1 9 Tf 0 0 0 rg 50 {y+5} Td ({self._clean(t_title)}) Tj ET")
+            stream_cmds.append(f"BT /F2 9 Tf 0.2 0.2 0.2 rg 345 {y+5} Td ({score}/{max_pts} pts) Tj ET")
+            
+            stat_color = "0 0.5 0" if t_status == "PASS" else "0.7 0 0"
+            stream_cmds.append(f"BT /F1 9 Tf {stat_color} rg 455 {y+5} Td ({t_status}) Tj ET")
             
             # Feedback lines
             fb_y = y - 18
-            for fb_item in feedback[:2]: # Show top 2 feedback lines
-                text_ops.append(f"BT /F2 8 Tf 70 {fb_y} Td (- {self._escape(fb_item)}) Tj ET")
-                fb_y -= 12
+            for fb_item in feedback[:2]:
+                cleaned_fb = self._clean(fb_item)
+                stream_cmds.append(f"BT /F2 8 Tf 0.3 0.3 0.3 rg 60 {fb_y} Td (- {cleaned_fb[:80]}) Tj ET")
+                fb_y -= 11
             
             y -= 45
 
         # Footer
-        text_ops.append("0.7 0.7 0.7 RG 1 w 50 50 m 550 50 l S")
-        text_ops.append("BT /F2 8 Tf 50 35 Td (Generated automatically by ASE Autograder System. Official Record.) Tj ET")
+        stream_cmds.append("0.8 0.8 0.8 RG 1 w 40 45 m 572 45 l S")
+        stream_cmds.append("BT /F2 8 Tf 0.5 0.5 0.5 rg 40 32 Td (Generated automatically by ASE Autograder System. Official Record.) Tj ET")
 
-        content_stream = "\n".join(text_ops)
-        content_bytes = content_stream.encode('utf-8')
+        stream_data = "\n".join(stream_cmds).encode('latin1', errors='replace')
 
-        # Add Objects
-        # Obj 1: Catalog
-        # Obj 2: Pages
-        # Obj 3: Page
-        # Obj 4: Content Stream
-        # Obj 5: Font F1 (Helvetica-Bold)
-        # Obj 6: Font F2 (Helvetica)
+        # PDF Object Assembly
+        pdf_bytes = bytearray()
+        pdf_bytes.extend(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
 
-        content_obj_id = self._add_object(f"<</Length {len(content_bytes)}>>\nstream\n{content_stream}\nendstream")
-        font1_obj_id = self._add_object("<</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold>>")
-        font2_obj_id = self._add_object("<</Type /Font /Subtype /Type1 /BaseFont /Helvetica>>")
+        offsets = []
         
-        resources_obj_id = self._add_object(f"<</Font <</F1 {font1_obj_id} 0 R /F2 {font2_obj_id} 0 R>>>>")
-        page_obj_id = self._add_object(f"<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents {content_obj_id} 0 R /Resources {resources_obj_id} 0 R>>")
-        pages_obj_id = self._add_object(f"<</Type /Pages /Kids [{page_obj_id} 0 R] /Count 1>>")
-        catalog_obj_id = self._add_object(f"<</Type /Catalog /Pages {pages_obj_id} 0 R>>")
+        def add_obj(body):
+            offsets.append(len(pdf_bytes))
+            obj_id = len(offsets)
+            pdf_bytes.extend(f"{obj_id} 0 obj\n".encode('latin1'))
+            if isinstance(body, bytes):
+                pdf_bytes.extend(body)
+            else:
+                pdf_bytes.extend(body.encode('latin1'))
+            pdf_bytes.extend(b"\nendobj\n")
+            return obj_id
 
-        # Xref Table
-        xref_offset = len(self.stream)
-        self.stream.extend(f"xref\n0 {len(self.offsets) + 1}\n0000000000 65535 f \n".encode('utf-8'))
-        for off in self.offsets:
-            self.stream.extend(f"{off:010d} 00000 n \n".encode('utf-8'))
+        # 1: Catalog
+        add_obj("<</Type /Catalog /Pages 2 0 R>>")
+        # 2: Pages
+        add_obj("<</Type /Pages /Kids [3 0 R] /Count 1>>")
+        # 3: Page
+        add_obj("<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources 4 0 R /Contents 5 0 R>>")
+        # 4: Resources
+        add_obj("<</Font <</F1 <</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold>> /F2 <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>>>> >>")
+        # 5: Contents
+        add_obj(f"<</Length {len(stream_data)}>>\nstream\n".encode('latin1') + stream_data + b"\nendstream")
 
-        # Trailer
-        trailer_str = f"trailer\n<</Size {len(self.offsets) + 1} /Root {catalog_obj_id} 0 R>>\nstartxref\n{xref_offset}\n%%EOF\n"
-        self.stream.extend(trailer_str.encode('utf-8'))
+        xref_pos = len(pdf_bytes)
+        pdf_bytes.extend(f"xref\n0 {len(offsets) + 1}\n0000000000 65535 f \n".encode('latin1'))
+        for off in offsets:
+            pdf_bytes.extend(f"{off:010d} 00000 n \n".encode('latin1'))
+        
+        pdf_bytes.extend(f"trailer\n<</Size {len(offsets) + 1} /Root 1 0 R>>\nstartxref\n{xref_pos}\n%%EOF\n".encode('latin1'))
 
-        # Write to disk
         with open(self.filename, 'wb') as f:
-            f.write(self.stream)
+            f.write(pdf_bytes)
 
-    def _escape(self, text):
-        return text.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+    def _clean(self, text):
+        # Remove ANSI escape sequences and PDF special chars
+        clean_text = re.sub(r'\x1b\[[0-9;]*m', '', str(text))
+        return clean_text.replace('\\', '/').replace('(', '[').replace(')', ']')
+
+
+def load_autograder_module(repo_path):
+    """Dynamically import autograder.py from a student repo directory."""
+    autograder_file = os.path.join(repo_path, "autograder.py")
+    if not os.path.exists(autograder_file):
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("student_autograder", autograder_file)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    except Exception as e:
+        print(f"Error loading autograder from {repo_path}: {e}")
+        return None
 
 
 def main():
@@ -166,7 +173,6 @@ def main():
     pdf_dir = "evaluation_reports"
     os.makedirs(pdf_dir, exist_ok=True)
 
-    # Moodle Gradebook Standard Header Format
     moodle_headers = [
         "Identifier",          # Moodle Student ID
         "Full Name", 
@@ -184,15 +190,13 @@ def main():
 
     moodle_records = []
 
-    # Find student repository folders
     repo_dirs = []
     for root, dirs, files in os.walk(target_dir):
         if "student_info.json" in files and "autograder.py" in files:
             repo_dirs.append(root)
 
     if not repo_dirs:
-        print("No student repositories found with student_info.json and autograder.py.")
-        return
+        repo_dirs = ["."]
 
     print(f"==================================================")
     print(f"  ASE Master Class Report & PDF Evaluation Suite  ")
@@ -209,45 +213,50 @@ def main():
         try:
             with open(info_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                name = data.get("full_name", name).strip()
-                sid = data.get("student_id", sid).strip()
-                gh_user = data.get("github_username", gh_user).strip()
+                name = str(data.get("full_name", name)).strip()
+                sid = str(data.get("student_id", sid)).strip()
+                gh_user = str(data.get("github_username", gh_user)).strip()
         except Exception:
             pass
 
-        # Evaluate each task using autograder.py --task N
+        # Direct Module Execution (Fixes ANSI 9215 Bug!)
+        old_cwd = os.getcwd()
+        os.chdir(repo_path)
+        
+        mod = load_autograder_module(".")
+        
         task_details = []
+        task_scores = {}
         total_score = 0
         max_possible = 100
-        
-        task_scores = {}
-        for task_num in range(1, 7):
-            try:
-                res = subprocess.run(
-                    f"python autograder.py --task {task_num}",
-                    shell=True,
-                    cwd=repo_path,
-                    capture_output=True,
-                    text=True
-                )
-                
+
+        checkers = {
+            1: ("Task 1: Git Config & Student Info", getattr(mod, "check_task_1", None), 15),
+            2: ("Task 2: .gitignore Configuration", getattr(mod, "check_task_2", None), 15),
+            3: ("Task 3: Branching & Calculator", getattr(mod, "check_task_3", None), 20),
+            4: ("Task 4: Merge Conflict Resolution", getattr(mod, "check_task_4", None), 20),
+            5: ("Task 5: Git Stashing & Tagging", getattr(mod, "check_task_5", None), 15),
+            6: ("Task 6: GitHub Reflection", getattr(mod, "check_task_6", None), 15),
+        }
+
+        for num, (title, func, max_pts) in checkers.items():
+            if func:
+                try:
+                    score, feedback = func()
+                    # Ensure score is pure integer
+                    score = int(score)
+                except Exception as e:
+                    score = 0
+                    feedback = [f"FAIL: Error executing check: {e}"]
+            else:
                 score = 0
-                feedback_lines = []
-                for line in res.stdout.splitlines():
-                    if "Score:" in line and "pts" in line:
-                        parts = line.split("Score:")[-1].strip().split("/")[0]
-                        score = int(''.join(filter(str.isdigit, parts)))
-                    elif "└─" in line:
-                        feedback_lines.append(line.replace("└─", "").strip())
-                
-                max_pts = 15 if task_num in [1, 2, 5, 6] else 20
-                task_title = f"Task {task_num}"
-                task_details.append((task_title, score, max_pts, feedback_lines))
-                task_scores[task_num] = score
-                total_score += score
-            except Exception:
-                task_scores[task_num] = 0
-                task_details.append((f"Task {task_num}", 0, 15, ["FAIL: Execution error."]))
+                feedback = ["FAIL: Checker function not found."]
+
+            task_scores[num] = score
+            total_score += score
+            task_details.append((title, score, max_pts, feedback))
+
+        os.chdir(old_cwd)
 
         pct = f"{int((total_score / max_possible) * 100)}%"
         status = "PASSED" if total_score == max_possible else ("PARTIAL" if total_score > 0 else "FAILED")
@@ -273,7 +282,7 @@ def main():
         clean_name = "".join(c for c in name if c.isalnum() or c == '_').replace(' ', '_')
         pdf_filename = os.path.join(pdf_dir, f"{clean_sid}_{clean_name}_Evaluation.pdf")
         
-        pdf_writer = SimplePDFWriter(pdf_filename)
+        pdf_writer = RobustPDFWriter(pdf_filename)
         pdf_writer.build_student_pdf(name, sid, gh_user, task_details, total_score, max_possible)
         
         print(f"  ✔ Student: {name:20s} ({sid:15s}) | Score: {total_score:3d}/100 pts | PDF: {os.path.basename(pdf_filename)}")
