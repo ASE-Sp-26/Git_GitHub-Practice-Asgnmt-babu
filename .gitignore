@@ -2,3 +2,9 @@ lectures/
 __pycache__/
 *.pyc
 .vscode/
+
+# Instructor-Only Grade & Reporting Tools (Excluded from Student Clones)
+fetch_class_moodle_report.py
+generate_class_report*.py
+moodle_consolidated_grades.csv
+evaluation_reports/
