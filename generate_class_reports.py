@@ -29,15 +29,12 @@ class RobustPDFWriter:
         status_str = "PASSED" if total_score == max_possible else ("PARTIAL" if total_score > 0 else "FAILED")
         date_str = datetime.datetime.now().strftime("%B %d, %Y")
 
-        # PDF Primitive Commands
         stream_cmds = []
         
-        # Header Box
         stream_cmds.append("0.1 0.2 0.4 rg 40 730 532 45 re f")
         stream_cmds.append("BT /F1 16 Tf 1 1 1 rg 55 754 Td (Advanced Software Engineering - Evaluation Report) Tj ET")
         stream_cmds.append("BT /F2 9 Tf 0.9 0.9 0.9 rg 55 738 Td (Course Code: ASE-Sp26 | Assignment: Git & GitHub Practice) Tj ET")
 
-        # Student Details Box
         stream_cmds.append("0.96 0.96 0.98 rg 40 650 532 65 re f")
         stream_cmds.append("0.8 0.8 0.85 RG 1 w 40 650 532 65 re s")
         
@@ -51,22 +48,19 @@ class RobustPDFWriter:
         stream_cmds.append("BT /F1 10 Tf 0 0 0 rg 330 668 Td (Date Evaluated:) Tj ET")
         stream_cmds.append(f"BT /F2 10 Tf 0.2 0.2 0.2 rg 420 668 Td ({date_str}) Tj ET")
 
-        # Final Scorecard Box
         if status_str == "PASSED":
             stream_cmds.append("0.9 0.96 0.9 rg 40 580 532 55 re f")
             stream_cmds.append("0.2 0.6 0.2 RG 1.5 w 40 580 532 55 re s")
-            stream_cmds.append(f"BT /F1 13 Tf 0.1 0.4 0.1 rg 55 605 Td (FINAL GRADE: {total_score} / {max_possible} Points \({pct}%\)) Tj ET")
-            stream_cmds.append(f"BT /F1 13 Tf 0.1 0.4 0.1 rg 420 605 Td (STATUS: PASSED) Tj ET")
+            stream_cmds.append(f"BT /F1 13 Tf 0.1 0.4 0.1 rg 55 605 Td (FINAL GRADE: {total_score} / {max_possible} Points [{pct}%]) Tj ET")
+            stream_cmds.append("BT /F1 13 Tf 0.1 0.4 0.1 rg 420 605 Td (STATUS: PASSED) Tj ET")
         else:
             stream_cmds.append("0.98 0.91 0.91 rg 40 580 532 55 re f")
             stream_cmds.append("0.7 0.2 0.2 RG 1.5 w 40 580 532 55 re s")
-            stream_cmds.append(f"BT /F1 13 Tf 0.6 0.1 0.1 rg 55 605 Td (FINAL GRADE: {total_score} / {max_possible} Points \({pct}%\)) Tj ET")
+            stream_cmds.append(f"BT /F1 13 Tf 0.6 0.1 0.1 rg 55 605 Td (FINAL GRADE: {total_score} / {max_possible} Points [{pct}%]) Tj ET")
             stream_cmds.append(f"BT /F1 13 Tf 0.6 0.1 0.1 rg 420 605 Td (STATUS: {status_str}) Tj ET")
 
-        # Task Breakdown Header
         stream_cmds.append("BT /F1 12 Tf 0 0 0 rg 40 550 Td (Task Breakdown & Feedback:) Tj ET")
         
-        # Table Header Box
         stream_cmds.append("0.2 0.3 0.5 rg 40 520 532 20 re f")
         stream_cmds.append("BT /F1 9 Tf 1 1 1 rg 50 526 Td (Task Title) Tj ET")
         stream_cmds.append("BT /F1 9 Tf 1 1 1 rg 340 526 Td (Score) Tj ET")
@@ -76,7 +70,6 @@ class RobustPDFWriter:
         for t_title, score, max_pts, feedback in task_data:
             t_status = "PASS" if score == max_pts else ("PARTIAL" if score > 0 else "FAIL")
             
-            # Row Background
             stream_cmds.append(f"0.97 0.97 0.97 rg 40 {y-5} 532 25 re f")
             stream_cmds.append(f"0.85 0.85 0.85 RG 0.5 w 40 {y-5} 532 25 re s")
 
@@ -86,7 +79,6 @@ class RobustPDFWriter:
             stat_color = "0 0.5 0" if t_status == "PASS" else "0.7 0 0"
             stream_cmds.append(f"BT /F1 9 Tf {stat_color} rg 455 {y+5} Td ({t_status}) Tj ET")
             
-            # Feedback lines
             fb_y = y - 18
             for fb_item in feedback[:2]:
                 cleaned_fb = self._clean(fb_item)
@@ -95,13 +87,11 @@ class RobustPDFWriter:
             
             y -= 45
 
-        # Footer
         stream_cmds.append("0.8 0.8 0.8 RG 1 w 40 45 m 572 45 l S")
         stream_cmds.append("BT /F2 8 Tf 0.5 0.5 0.5 rg 40 32 Td (Generated automatically by ASE Autograder System. Official Record.) Tj ET")
 
         stream_data = "\n".join(stream_cmds).encode('latin1', errors='replace')
 
-        # PDF Object Assembly
         pdf_bytes = bytearray()
         pdf_bytes.extend(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
 
@@ -118,15 +108,10 @@ class RobustPDFWriter:
             pdf_bytes.extend(b"\nendobj\n")
             return obj_id
 
-        # 1: Catalog
         add_obj("<</Type /Catalog /Pages 2 0 R>>")
-        # 2: Pages
         add_obj("<</Type /Pages /Kids [3 0 R] /Count 1>>")
-        # 3: Page
         add_obj("<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources 4 0 R /Contents 5 0 R>>")
-        # 4: Resources
         add_obj("<</Font <</F1 <</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold>> /F2 <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>>>> >>")
-        # 5: Contents
         add_obj(f"<</Length {len(stream_data)}>>\nstream\n".encode('latin1') + stream_data + b"\nendstream")
 
         xref_pos = len(pdf_bytes)
@@ -140,13 +125,11 @@ class RobustPDFWriter:
             f.write(pdf_bytes)
 
     def _clean(self, text):
-        # Remove ANSI escape sequences and PDF special chars
         clean_text = re.sub(r'\x1b\[[0-9;]*m', '', str(text))
         return clean_text.replace('\\', '/').replace('(', '[').replace(')', ']')
 
 
 def load_autograder_module(repo_path):
-    """Dynamically import autograder.py from a student repo directory."""
     autograder_file = os.path.join(repo_path, "autograder.py")
     if not os.path.exists(autograder_file):
         return None
@@ -161,13 +144,9 @@ def load_autograder_module(repo_path):
 
 
 def main():
-    target_dir = "Student-testing"
+    target_dir = "."
     if len(sys.argv) > 2 and sys.argv[1] == "--dir":
         target_dir = sys.argv[2]
-        
-    if not os.path.exists(target_dir):
-        print(f"Directory '{target_dir}' not found. Scanning current directory for student repos...")
-        target_dir = "."
 
     moodle_file = "moodle_consolidated_grades.csv"
     pdf_dir = "evaluation_reports"
@@ -191,12 +170,14 @@ def main():
     moodle_records = []
 
     repo_dirs = []
-    for root, dirs, files in os.walk(target_dir):
-        if "student_info.json" in files and "autograder.py" in files:
-            repo_dirs.append(root)
+    if os.path.exists(target_dir):
+        for root, dirs, files in os.walk(target_dir):
+            if "student_info.json" in files and "autograder.py" in files:
+                repo_dirs.append(root)
 
     if not repo_dirs:
-        repo_dirs = ["."]
+        print(f"Directory '{target_dir}' contains no student folders. Use fetch_class_moodle_report.py to fetch API grades.")
+        return
 
     print(f"==================================================")
     print(f"  ASE Master Class Report & PDF Evaluation Suite  ")
@@ -219,7 +200,10 @@ def main():
         except Exception:
             pass
 
-        # Direct Module Execution (Fixes ANSI 9215 Bug!)
+        # Exclude template placeholders
+        if name == "YOUR NAME HERE" or sid == "YOUR STUDENT ID HERE":
+            continue
+
         old_cwd = os.getcwd()
         os.chdir(repo_path)
         
@@ -243,7 +227,6 @@ def main():
             if func:
                 try:
                     score, feedback = func()
-                    # Ensure score is pure integer
                     score = int(score)
                 except Exception as e:
                     score = 0
@@ -261,9 +244,8 @@ def main():
         pct = f"{int((total_score / max_possible) * 100)}%"
         status = "PASSED" if total_score == max_possible else ("PARTIAL" if total_score > 0 else "FAILED")
 
-        # 1. Build Moodle Record
         moodle_records.append([
-            sid,            # Primary Identifier for Moodle
+            sid,
             name,
             gh_user,
             task_scores.get(1, 0),
@@ -277,7 +259,6 @@ def main():
             status
         ])
 
-        # 2. Build Individual Student PDF Evaluation Sheet
         clean_sid = "".join(c for c in sid if c.isalnum() or c in ['-', '_'])
         clean_name = "".join(c for c in name if c.isalnum() or c == '_').replace(' ', '_')
         pdf_filename = os.path.join(pdf_dir, f"{clean_sid}_{clean_name}_Evaluation.pdf")
@@ -287,7 +268,6 @@ def main():
         
         print(f"  ✔ Student: {name:20s} ({sid:15s}) | Score: {total_score:3d}/100 pts | PDF: {os.path.basename(pdf_filename)}")
 
-    # Write Moodle CSV File
     with open(moodle_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(moodle_headers)
