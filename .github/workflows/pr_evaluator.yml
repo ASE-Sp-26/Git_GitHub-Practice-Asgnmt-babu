@@ -39,7 +39,7 @@ jobs:
       - name: Run Autograder Evaluation
         id: run-autograder
         run: |
-          python autograder.py > autograder_output.txt || true
+          python autograder.py --no-color > autograder_output.txt || true
           cat autograder_output.txt
 
       - name: Post Grade Comment on Pull Request
@@ -49,6 +49,7 @@ jobs:
           script: |
             const fs = require('fs');
             let output = fs.readFileSync('autograder_output.txt', 'utf8');
+            output = output.replace(/\x1B\[[0-9;]*[a-zA-Z]|\^\[\[[0-9;]*[a-zA-Z]|\x1B/g, '');
             
             const commentBody = `### 📊 Assignment Evaluation Results (@${context.actor})\n\n\`\`\`text\n${output}\n\`\`\`\n\n*Note: This grade report was generated automatically. You may update your code and push to this branch to re-run autograding.*`;
             
