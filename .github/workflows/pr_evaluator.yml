@@ -51,7 +51,67 @@ jobs:
             let output = fs.readFileSync('autograder_output.txt', 'utf8');
             output = output.replace(/\x1B\[[0-9;]*[a-zA-Z]|\^\[\[[0-9;]*[a-zA-Z]|\x1B/g, '');
             
-            const commentBody = `### 📊 Assignment Evaluation Results (@${context.actor})\n\n\`\`\`text\n${output}\n\`\`\`\n\n*Note: This grade report was generated automatically. You may update your code and push to this branch to re-run autograding.*`;
+            // Build Markdown Evaluation Table
+            const taskWeights = { 1: 15, 2: 15, 3: 20, 4: 20, 5: 15, 6: 15 };
+            const taskTitles = {
+              1: "Task 1: Git Config & Student Info",
+              2: "Task 2: .gitignore Rules",
+              3: "Task 3: Branching & Calculator",
+              4: "Task 4: Merge Conflict Resolution",
+              5: "Task 5: Git Stashing & Tagging",
+              6: "Task 6: GitHub Reflection"
+            };
+
+            let tableRows = [];
+            let totalScore = 0;
+            let maxTotal = 100;
+
+            for (let i = 1; i <= 6; i++) {
+              const maxPts = taskWeights[i];
+              let score = 0;
+              const m = output.match(new RegExp(`Task ${i}[^\\n]*?\\n\\s*Score:\\s*(\\d+)/(\\d+)`, 'i')) ||
+                        output.match(new RegExp(`Task ${i}[^\\n]*?\\((\\d+)/(\\d+)\\s*pts\\)`, 'i'));
+              if (m) {
+                score = parseInt(m[1], 10);
+              }
+              totalScore += score;
+
+              const fbMatch = output.match(new RegExp(`Task ${i}:[^\\n]*\\n((?:[ \\t]*(?:└─|-|•)[^\\n]*\\n?)*)`, 'i'));
+              let feedback = "";
+              if (fbMatch && fbMatch[1]) {
+                feedback = fbMatch[1].split('\n')
+                  .map(l => l.replace(/^[ \t]*(?:└─|-|•)\s*/, '').trim())
+                  .filter(l => l)
+                  .join('<br>');
+              }
+              if (!feedback) {
+                feedback = score === maxPts ? "PASS: Requirement completed." : "FAIL: Requirement incomplete.";
+              }
+
+              const status = score === maxPts ? "✅ PASS" : (score > 0 ? "⚠️ PARTIAL" : "❌ FAIL");
+              tableRows.push(`| **${taskTitles[i]}** | ${status} | **${score} / ${maxPts} pts** | ${feedback} |`);
+            }
+
+            const overallStatus = totalScore === maxTotal ? "✅ PASS" : (totalScore > 0 ? "⚠️ PARTIAL" : "❌ FAIL");
+            const pct = Math.floor((totalScore / maxTotal) * 100);
+
+            const commentBody = `### 📊 Assignment Evaluation Results (@${context.actor})
+
+| Task | Status | Score | Feedback |
+| :--- | :---: | :---: | :--- |
+${tableRows.join('\n')}
+| **TOTAL SCORE** | **${overallStatus}** | **${totalScore} / ${maxTotal} pts** | **Grade: ${pct}%** |
+
+<details>
+<summary>🔍 Click to view raw autograder log</summary>
+
+\`\`\`text
+${output}
+\`\`\`
+
+</details>
+
+*Note: This grade report was generated automatically. You may update your code and push to this branch to re-run autograding.*`;
             
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
