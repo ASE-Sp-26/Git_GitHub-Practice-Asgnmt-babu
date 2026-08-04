@@ -96,14 +96,18 @@ def check_task_2():
         return 0, ["FAIL: .gitignore file does not exist."]
         
     with open(gitignore_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+        lines = f.readlines()
+        
+    # Strip comment lines so starter template prompt comments don't trigger false positives
+    clean_lines = [line.strip() for line in lines if not line.strip().startswith('#')]
+    clean_content = '\n'.join(clean_lines)
         
     required_patterns = ["*.log", "temp/", "lectures/"]
     found_patterns = []
     
     for pattern in required_patterns:
         clean_pat = pattern.rstrip('/')
-        if clean_pat in content:
+        if clean_pat in clean_content:
             found_patterns.append(pattern)
             
     if len(found_patterns) >= 2:
@@ -132,12 +136,12 @@ def check_task_3():
     
     stdout_br, _, _ = run_cmd("git branch -a")
     stdout_log, _, _ = run_cmd("git log --oneline")
-    has_calc_branch = "feature/calculator" in stdout_br or "feature-calculator" in stdout_br or "calculator" in stdout_log.lower()
+    has_calc_branch = "feature/calculator" in stdout_br or "feature-calculator" in stdout_br or "feature/calculator" in stdout_log or "feature-calculator" in stdout_log
     if has_calc_branch:
         score += 5
         feedback.append("PASS: Feature branch 'feature/calculator' detected.")
     else:
-        feedback.append("WARN: Branch 'feature/calculator' not found in local/remote branches.")
+        feedback.append("FAIL: Branch 'feature/calculator' not found.")
         
     calc_path = os.path.join("src", "calculator.py")
     if not os.path.exists(calc_path):
@@ -187,10 +191,10 @@ def check_task_4():
     stdout_branches, _, _ = run_cmd("git branch -a")
     stdout_log, _, _ = run_cmd("git log --oneline")
 
-    has_branch = "feature/conflict-fix" in stdout_branches or "feature/conflict-fix" in stdout_log
-    has_merge_commit = "resolve merge conflict" in stdout_log.lower() or "merge" in stdout_log.lower() or "conflict" in stdout_log.lower()
+    has_branch = "feature/conflict-fix" in stdout_branches
+    has_merge_commit = "fix: resolve merge conflict" in stdout_log.lower() or "resolve merge conflict in" in stdout_log.lower()
 
-    if has_branch or has_merge_commit:
+    if has_branch:
         score += 5
         feedback.append("PASS: Branch 'feature/conflict-fix' detected.")
     else:
@@ -202,7 +206,7 @@ def check_task_4():
     else:
         feedback.append("FAIL: Merge conflict resolution commit not found in git log.")
 
-    if not has_conflict_markers and (has_branch or has_merge_commit):
+    if not has_conflict_markers and (has_branch and has_merge_commit):
         try:
             spec = importlib.util.spec_from_file_location("app", app_path)
             app = importlib.util.module_from_spec(spec)
@@ -265,17 +269,17 @@ def check_task_6():
     with open(refl_path, 'r', encoding='utf-8') as f:
         content = f.read()
         
-    placeholder = "[Write your response here"
-    placeholders_remaining = content.count(placeholder)
+    placeholders = ["*Your answer here...*", "[Write your response here", "[Your answer here]", "Replace this placeholder"]
+    placeholders_remaining = sum(content.count(p) for p in placeholders)
     
-    if placeholders_remaining == 0 and len(content.strip()) > 300:
+    if placeholders_remaining > 0:
+        feedback.append("FAIL: GITHUB_REFLECTION.md contains unedited placeholder text.")
+    elif len(content.strip()) > 300:
         score += 15
         feedback.append("PASS: GITHUB_REFLECTION.md completed with detailed answers.")
-    elif placeholders_remaining < 3:
+    else:
         score += 8
         feedback.append("WARN: GITHUB_REFLECTION.md partially completed.")
-    else:
-        feedback.append("FAIL: GITHUB_REFLECTION.md contains unedited placeholder text.")
         
     return score, feedback
 
