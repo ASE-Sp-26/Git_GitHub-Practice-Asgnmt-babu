@@ -22,11 +22,12 @@ By completing this assignment, you will gain hands-on proficiency in:
 
 ## 🚀 Quick Setup & Execution
 
-### Step 1: Clone your Assignment Repository
-When you accept the assignment via GitHub Classroom, a private repository will be generated for you. Clone it locally using:
+### Step 1: Fork and Clone your Assignment Repository
+1. **Fork this repository** (`https://github.com/ClassroomAsignments/Git_GitHub-Practice-Asgnmt`) to your personal GitHub account using the "Fork" button on GitHub.
+2. Clone your fork locally using:
 ```bash
-git clone https://github.com/<your-classroom-org>/<your-repo-name>.git
-cd <your-repo-name>
+git clone https://github.com/<your-github-username>/Git_GitHub-Practice-Asgnmt.git
+cd Git_GitHub-Practice-Asgnmt
 ```
 
 ### Step 2: Test your progress locally anytime!
@@ -206,8 +207,9 @@ python autograder.py --task 3
 ## 📤 Submission Instructions
 
 1. Run `python autograder.py` locally and ensure you score **100/100 points**.
-2. Push all branches and tags to GitHub:
+2. Push all commits, branches, and tags to your fork on GitHub:
    ```bash
-   git push origin main --tags
+   git push origin main --all --tags
    ```
-3. Navigate to your repository on GitHub. Go to the **Actions** tab to confirm that the GitHub Classroom autograding workflow runs and awards **100/100**.
+3. Open a **Pull Request (PR)** from your fork's `main` branch to the instructor repository (`ClassroomAsignments/Git_GitHub-Practice-Asgnmt:main`).
+4. GitHub Actions will automatically evaluate your PR and post your itemized grade score directly as a PR comment!

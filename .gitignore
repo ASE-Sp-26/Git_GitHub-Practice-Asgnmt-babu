@@ -1,22 +1,4 @@
-# Python / Editor artifacts
-__pycache__/
-*.pyc
-.vscode/
-temp/
-*.log
-
-# Student Local Testing Directory
-Student-testing/
-
-# Instructor Only / Confidential Assignment Assets
-SOLUTION_GUIDE.md
-pr_based_assignment_plan.md
-fetch_class_moodle_report.py
-generate_class_report.py
-generate_class_reports.py
-
-# Generated Grade Outputs
-moodle_consolidated_grades.csv
-evaluation_reports/
-lectures/
-
+# TODO: Add patterns to ignore:
+# 1. All log files (*.log)
+# 2. Entire temp directory (temp/)
+# 3. Entire lectures directory (lectures/)
