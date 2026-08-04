@@ -25,6 +25,11 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Fetch All Remote Branches & Tags
+        run: |
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*' || true
+          git fetch --tags origin || true
+
       - name: Run Autograder Evaluation
         id: run-autograder
         run: |
