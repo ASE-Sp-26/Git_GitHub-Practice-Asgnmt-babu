@@ -1,8 +1,8 @@
 # Git & GitHub Practice Assignment
 
-Welcome to the **Git & GitHub Practice Assignment** template repository for GitHub Classroom!
+Welcome to the **Git & GitHub Practice Assignment** repository!
 
-This repository contains practical exercises designed to test your knowledge of basic Git commands, advanced Git workflows (branching, merge conflicts, stashing, tagging), and GitHub collaboration best practices.
+This repository contains practical exercises designed to test your knowledge of basic Git commands, advanced Git workflows (branching, merge conflicts, stashing, tagging), and GitHub collaboration best practices using Pull Requests.
 
 ---
 
@@ -11,7 +11,6 @@ This repository contains practical exercises designed to test your knowledge of 
 Before starting your work, please review the following guide files included in this repository:
 - 📖 [**`ASSIGNMENT_INSTRUCTIONS.md`**](ASSIGNMENT_INSTRUCTIONS.md): Comprehensive step-by-step narrative guide for completing all tasks.
 - 📊 [**`RUBRIC.md`**](RUBRIC.md): Detailed grading rubric matrix and point breakdown.
-- 💡 [**`SOLUTION_GUIDE.md`**](SOLUTION_GUIDE.md): Instructor reference solution walkthrough.
 
 ---
 
@@ -28,12 +27,22 @@ Before starting your work, please review the following guide files included in t
 
 ---
 
-## 🧪 Local Testing & Autograding
+## 🚀 Submission Workflow & Autograding
 
-You can test your progress locally at any time on Windows, macOS, or Linux without extra dependencies:
+1. **Fork this repository** to your personal GitHub account.
+2. **Clone your fork** locally:
+   ```bash
+   git clone https://github.com/<your-github-username>/Git_GitHub-Practice-Asgnmt.git
+   cd Git_GitHub-Practice-Asgnmt
+   ```
+3. Complete Tasks 1–6 and test your work locally anytime:
+   ```bash
+   python autograder.py
+   ```
+4. Push all commits, branches, and tags to your fork on GitHub:
+   ```bash
+   git push origin main --all --tags
+   ```
+5. **Open a Pull Request (PR)** from your fork's `main` branch to the instructor repository (`ClassroomAsignments/Git_GitHub-Practice-Asgnmt:main`).
+6. GitHub Actions will automatically grade your PR and post your itemized score directly as a PR comment!
 
-```bash
-python autograder.py
-```
-
-When you push your commits to GitHub (`git push origin main --tags`), GitHub Actions will automatically evaluate your work and report your final grade directly to GitHub Classroom!
