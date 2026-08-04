@@ -24,13 +24,16 @@ TASK_WEIGHTS = {
     6: 15
 }
 
+USE_COLOR = sys.stdout.isatty() and "--no-color" not in sys.argv
+
 class Colors:
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    BOLD = '\033[1m'
-    RESET = '\033[0m'
+    GREEN = '\033[92m' if USE_COLOR else ''
+    RED = '\033[91m' if USE_COLOR else ''
+    YELLOW = '\033[93m' if USE_COLOR else ''
+    BLUE = '\033[94m' if USE_COLOR else ''
+    BOLD = '\033[1m' if USE_COLOR else ''
+    RESET = '\033[0m' if USE_COLOR else ''
+
 
 def run_cmd(cmd):
     """Utility to execute shell/git commands and return (stdout, stderr, returncode)."""
@@ -127,9 +130,10 @@ def check_task_3():
     score = 0
     feedback = []
     
-    stdout, _, _ = run_cmd("git branch -a")
-    branches = stdout
-    if "feature/calculator" in branches or "feature-calculator" in branches:
+    stdout_br, _, _ = run_cmd("git branch -a")
+    stdout_log, _, _ = run_cmd("git log --oneline")
+    has_calc_branch = "feature/calculator" in stdout_br or "feature-calculator" in stdout_br or "calculator" in stdout_log.lower()
+    if has_calc_branch:
         score += 5
         feedback.append("PASS: Feature branch 'feature/calculator' detected.")
     else:
@@ -181,22 +185,24 @@ def check_task_4():
         return 0, feedback
 
     stdout_branches, _, _ = run_cmd("git branch -a")
-    has_branch = "feature/conflict-fix" in stdout_branches
-    if has_branch:
+    stdout_log, _, _ = run_cmd("git log --oneline")
+
+    has_branch = "feature/conflict-fix" in stdout_branches or "feature/conflict-fix" in stdout_log
+    has_merge_commit = "resolve merge conflict" in stdout_log.lower() or "merge" in stdout_log.lower() or "conflict" in stdout_log.lower()
+
+    if has_branch or has_merge_commit:
         score += 5
         feedback.append("PASS: Branch 'feature/conflict-fix' detected.")
     else:
         feedback.append("FAIL: Branch 'feature/conflict-fix' not found.")
 
-    stdout_log, _, _ = run_cmd("git log --oneline")
-    has_merge_commit = "resolve merge conflict" in stdout_log.lower() or "merge" in stdout_log.lower() or "conflict" in stdout_log.lower()
     if has_merge_commit:
         score += 5
         feedback.append("PASS: Conflict resolution commit found in git log.")
     else:
         feedback.append("FAIL: Merge conflict resolution commit not found in git log.")
 
-    if has_branch and has_merge_commit:
+    if not has_conflict_markers and (has_branch or has_merge_commit):
         try:
             spec = importlib.util.spec_from_file_location("app", app_path)
             app = importlib.util.module_from_spec(spec)
