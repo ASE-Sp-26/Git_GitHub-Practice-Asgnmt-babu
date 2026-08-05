@@ -21,8 +21,8 @@ jobs:
       - name: Checkout Pull Request Code
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -50,7 +50,6 @@ jobs:
             let output = fs.readFileSync('autograder_output.txt', 'utf8');
             output = output.replace(/\x1B\[[0-9;]*[a-zA-Z]|\^\[\[[0-9;]*[a-zA-Z]|\x1B/g, '');
             
-            // Build Markdown Evaluation Table
             const taskWeights = { 1: 15, 2: 15, 3: 20, 4: 20, 5: 15, 6: 15 };
             const taskTitles = {
               1: "Task 1: Git Config & Student Info",
@@ -68,14 +67,14 @@ jobs:
             for (let i = 1; i <= 6; i++) {
               const maxPts = taskWeights[i];
               let score = 0;
-              const m = output.match(new RegExp(`Task ${i}[^\\n]*?\\n\\s*Score:\\s*(\\d+)/(\\d+)`, 'i')) ||
-                        output.match(new RegExp(`Task ${i}[^\\n]*?\\((\\d+)/(\\d+)\\s*pts\\)`, 'i'));
+              const m = output.match(new RegExp("Task " + i + "[^\\n]*?\\n\\s*Score:\\s*(\\d+)/(\\d+)", "i")) ||
+                        output.match(new RegExp("Task " + i + "[^\\n]*?\\((\\d+)/(\\d+)\\s*pts\\)", "i"));
               if (m) {
                 score = parseInt(m[1], 10);
               }
               totalScore += score;
 
-              const fbMatch = output.match(new RegExp(`Task ${i}:[^\\n]*\\n((?:[ \\t]*(?:└─|-|•)[^\\n]*\\n?)*)`, 'i'));
+              const fbMatch = output.match(new RegExp("Task " + i + ":[^\\n]*\\n((?:[ \\t]*(?:└─|-|•)[^\\n]*\\n?)*)", "i"));
               let feedback = "";
               if (fbMatch && fbMatch[1]) {
                 feedback = fbMatch[1].split('\n')
@@ -88,30 +87,36 @@ jobs:
               }
 
               const status = score === maxPts ? "✅ PASS" : (score > 0 ? "⚠️ PARTIAL" : "❌ FAIL");
-              tableRows.push(`| **${taskTitles[i]}** | ${status} | **${score} / ${maxPts} pts** | ${feedback} |`);
+              tableRows.push("| **" + taskTitles[i] + "** | " + status + " | **" + score + " / " + maxPts + " pts** | " + feedback + " |");
             }
 
             const overallStatus = totalScore === maxTotal ? "✅ PASS" : (totalScore > 0 ? "⚠️ PARTIAL" : "❌ FAIL");
             const pct = Math.floor((totalScore / maxTotal) * 100);
 
-            const commentBody = `### 📊 Assignment Evaluation Results (@${context.actor})
+            let commentLines = [
+              "### 📊 Assignment Evaluation Results (@" + context.actor + ")",
+              "",
+              "| Task | Status | Score | Feedback |",
+              "| :--- | :---: | :---: | :--- |"
+            ];
+            for (let k = 0; k < tableRows.length; k++) {
+              commentLines.push(tableRows[k]);
+            }
+            commentLines.push("| **TOTAL SCORE** | **" + overallStatus + "** | **" + totalScore + " / " + maxTotal + " pts** | **Grade: " + pct + "%** |");
+            commentLines.push("");
+            commentLines.push("<details>");
+            commentLines.push("<summary>🔍 Click to view raw autograder log</summary>");
+            commentLines.push("");
+            commentLines.push("```text");
+            commentLines.push(output);
+            commentLines.push("```");
+            commentLines.push("");
+            commentLines.push("</details>");
+            commentLines.push("");
+            commentLines.push("*Note: This grade report was generated automatically. You may update your code and push to this branch to re-run autograding.*");
 
-| Task | Status | Score | Feedback |
-| :--- | :---: | :---: | :--- |
-${tableRows.join('\n')}
-| **TOTAL SCORE** | **${overallStatus}** | **${totalScore} / ${maxTotal} pts** | **Grade: ${pct}%** |
+            const commentBody = commentLines.join("\n");
 
-<details>
-<summary>🔍 Click to view raw autograder log</summary>
-
-\`\`\`text
-${output}
-\`\`\`
-
-</details>
-
-*Note: This grade report was generated automatically. You may update your code and push to this branch to re-run autograding.*`;
-            
             const prNumber = context.payload.pull_request ? context.payload.pull_request.number : null;
             if (prNumber) {
               const { data: comments } = await github.rest.issues.listComments({
