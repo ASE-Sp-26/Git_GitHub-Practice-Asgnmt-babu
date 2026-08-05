@@ -1,9 +1,9 @@
 """
-Task 4: Application main script
+Application Main Module - Task 4 Starter File
 """
 
-def greet(name="Alice"):
-    return f"Hello, {name}!"
+def greet(name):
+    return f"Greetings from main branch, {name}!"
 
 if __name__ == "__main__":
-    print(greet("Alice"))
+    print(greet("Student"))
