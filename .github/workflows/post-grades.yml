@@ -21,6 +21,7 @@ jobs:
           name: autograder_output
           path: .
           run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post Grade Comment on Pull Request
         uses: actions/github-script@v7
