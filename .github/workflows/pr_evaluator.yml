@@ -3,6 +3,8 @@ name: Pull Request Assignment Evaluator
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -13,6 +15,7 @@ permissions:
 
 jobs:
   evaluate-pr:
+    if: github.event_name == 'pull_request_target' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Pull Request Code
