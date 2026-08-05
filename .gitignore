@@ -2,16 +2,10 @@
 # 1. All log files (*.log)
 # 2. Entire temp directory (temp/)
 # 3. Entire lectures directory (lectures/)
+*.log
+temp/
+lectures/
 
 # Python bytecode & cache files
 __pycache__/
 *.pyc
-
-# Instructor-only development tools & local evaluation artifacts
-generate_class_reports.py
-AGENTS.md
-evaluation_reports/
-instructor_files/
-.gemini/
-moodle_student_feedback_comments.txt
-moodle_consolidated_grades.csv
