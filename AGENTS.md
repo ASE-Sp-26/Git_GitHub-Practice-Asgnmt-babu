@@ -91,9 +91,11 @@ graph TD
 * **100-Point Rubric**: Evaluates 5 tasks worth 100 total points (Git config: 15, `.gitignore`: 15, feature branches: 25, merge conflicts: 25, tags: 20).
 
 ### 🤖 2-Workflow Evaluation System ([`.github/workflows/autograder-runner.yml`](file:///.github/workflows/autograder-runner.yml) & [`.github/workflows/post-grades.yml`](file:///.github/workflows/post-grades.yml))
-* **Secure Sandbox Execution**: `autograder-runner.yml` executes untrusted student PR code under `pull_request` event with read-only permissions and uploads `autograder_output.txt` artifact.
-* **Privileged Comment Posting**: `post-grades.yml` triggers on `workflow_run` completion in the base repository context with write permissions to download the artifact and post the **Itemized Markdown Grade Table Comment** directly on the student PR.
+* **Secure Sandbox Execution**: `autograder-runner.yml` executes untrusted student PR code under `pull_request` event with read-only permissions (`contents: read`) and uploads `autograder_output.txt` artifact via `actions/upload-artifact@v4`.
+* **Privileged Comment Posting**: `post-grades.yml` triggers on `workflow_run` completion (`workflows: ["Autograder Runner"]`) in the base repository context with write permissions (`issues: write`, `pull-requests: write`) to download the artifact via `actions/download-artifact@v4` and post the **Itemized Markdown Grade Table Comment** directly on the student PR.
+* **Clean Formatting Invariant**: All JavaScript scripts inside GitHub Actions workflow YAML files MUST use clean array joining (`commentLines.join('\n')`) rather than multiline template literals to prevent YAML syntax parsing errors or IDE lint warnings.
 * **In-Place PR Updates**: Subsequent commits pushed to a student's PR update the existing comment in-place to avoid comment spam.
+
 
 ---
 
