@@ -1,0 +1,35 @@
+name: Autograder Runner
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  run-autograder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code (head repo)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run autograder
+        run: |
+          python autograder.py --no-color > autograder_output.txt || true
+          cat autograder_output.txt
+
+      - name: Upload autograder output
+        uses: actions/upload-artifact@v4
+        with:
+          name: autograder_output
+          path: autograder_output.txt
