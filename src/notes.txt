@@ -1,6 +1,6 @@
-[x] Task 1: Update student_info.json and Git config
-[x] Task 2: Configure .gitignore rules
-[x] Task 3: Create feature/calculator branch and implement calculator.py
-[x] Task 4: Resolve merge conflict on feature/conflict-fix
-[x] Task 5: Stash work, apply to notes.txt, and create release tag v1.0.0
-[x] Task 6: Complete reflection in GITHUB_REFLECTION.md
+[ ] Task 1: Update student_info.json and Git config
+[ ] Task 2: Configure .gitignore rules
+[ ] Task 3: Create feature/calculator branch and implement calculator.py
+[ ] Task 4: Resolve merge conflict on feature/conflict-fix
+[ ] Task 5: Stash work, apply to notes.txt, and create release tag v1.0.0
+[ ] Task 6: Complete reflection in GITHUB_REFLECTION.md
