@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,11 +21,10 @@ jobs:
       - name: Checkout Pull Request Code
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
           allow-unsafe-pr-checkout: true
-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -113,26 +113,31 @@ ${output}
 
 *Note: This grade report was generated automatically. You may update your code and push to this branch to re-run autograding.*`;
             
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-            });
-            
-            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('Assignment Evaluation Results'));
-            
-            if (botComment) {
-              await github.rest.issues.updateComment({
+            const prNumber = context.payload.pull_request ? context.payload.pull_request.number : null;
+            if (prNumber) {
+              const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: commentBody
+                issue_number: prNumber,
               });
+              
+              const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('Assignment Evaluation Results'));
+              
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: commentBody
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: commentBody
+                });
+              }
             } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.pull_request.number,
-                body: commentBody
-              });
+              console.log("No PR payload found for comment creation.");
             }
