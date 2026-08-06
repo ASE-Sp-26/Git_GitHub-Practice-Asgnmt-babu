@@ -204,12 +204,33 @@ python autograder.py --task 3
 
 ---
 
-## 📤 Submission Instructions
+## 📤 Submission & Automated Feedback Guide
 
-1. Run `python autograder.py` locally and ensure you score **100/100 points**.
-2. Push all commits, branches, and tags to your fork on GitHub:
-   ```bash
-   git push origin main --all --tags
-   ```
-3. Open a **Pull Request (PR)** from your fork's `main` branch to the instructor repository (`ClassroomAsignments/Git_GitHub-Practice-Asgnmt:main`).
-4. GitHub Actions will automatically evaluate your PR and post your itemized grade score directly as a PR comment!
+### Step 1: Verify your grade locally
+Run the autograder locally on your development machine at any time to ensure you score **100/100 points**:
+```bash
+python autograder.py
+```
+
+### Step 2: Push your work to your GitHub fork
+Push all your commits, feature branches, and release tags to your forked repository on GitHub:
+```bash
+git push origin main --tags
+git push origin --all
+```
+
+### Step 3: Open a Pull Request (PR) to the Instructor Repository
+1. Navigate to your forked repository page on GitHub (`https://github.com/<your-github-username>/Git_GitHub-Practice-Asgnmt`).
+2. Click the **Contribute** dropdown button near the top right of your file list (next to *Fetch upstream*).
+3. Click **Open pull request**.
+4. Verify that:
+   - **Base repository**: `ClassroomAsignments/Git_GitHub-Practice-Asgnmt` (branch: `main`)
+   - **Head repository**: `<your-github-username>/Git_GitHub-Practice-Asgnmt` (branch: `main` or your submission branch)
+5. Title your Pull Request as: `Submission: <Your Name> (<Your Student ID>)`.
+6. Click **Create pull request**.
+
+### Step 4: View your automated score table in PR comments
+1. Once your Pull Request is opened, GitHub Actions automatically runs the central autograder suite.
+2. Within **~15–20 seconds**, an automated bot will post an **Itemized Markdown Grade Score Table** directly in your PR conversation comments showing your itemized breakdown for Tasks 1 through 6.
+3. **Updating your submission**: If you need to fix any task, simply make changes locally, commit, and push to your fork (`git push origin main`). Your PR score table comment will **automatically update in-place** with your new score!
+
