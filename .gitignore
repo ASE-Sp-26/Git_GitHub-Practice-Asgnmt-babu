@@ -1,7 +1,7 @@
-# TODO: Add patterns to ignore:
-# 1. All log files (*.log)
-# 2. Entire temp directory (temp/)
-# 3. Entire lectures directory (lectures/)
+# Ignore patterns for Task 2:
+*.log
+temp/
+lectures/
 
 # Python bytecode & cache files
 __pycache__/
