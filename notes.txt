@@ -7,4 +7,4 @@
 [x] Task 5: Stash applied and release tagged v1.0.0
 [x] Task 6: GitHub reflection completed
 
-Note: Branch feature/manual-ui-pr-test created for manual Web UI PR testing.
+Note: Branch feature/final-live-pr-test created for live Web UI PR testing.
