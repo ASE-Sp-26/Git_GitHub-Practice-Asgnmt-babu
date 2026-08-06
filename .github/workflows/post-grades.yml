@@ -101,19 +101,23 @@ jobs:
             const commentBody = commentLines.join("\n");
 
             let prNumber = null;
-            if (github.event.workflow_run.pull_requests && github.event.workflow_run.pull_requests.length > 0) {
-              prNumber = github.event.workflow_run.pull_requests[0].number;
-            } else {
-              const headOwner = github.event.workflow_run.head_repository.owner.login;
-              const headBranch = github.event.workflow_run.head_branch;
-              const { data: prs } = await github.rest.pulls.list({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                head: headOwner + ":" + headBranch,
-                state: 'open'
-              });
-              if (prs && prs.length > 0) {
-                prNumber = prs[0].number;
+            const wr = context.payload && context.payload.workflow_run ? context.payload.workflow_run : null;
+
+            if (wr && Array.isArray(wr.pull_requests) && wr.pull_requests.length > 0) {
+              prNumber = wr.pull_requests[0].number;
+            } else if (wr && wr.head_repository && wr.head_branch) {
+              const headOwner = wr.head_repository.owner && wr.head_repository.owner.login;
+              const headBranch = wr.head_branch;
+              if (headOwner && headBranch) {
+                const { data: prs } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head: headOwner + ":" + headBranch,
+                  state: 'open'
+                });
+                if (prs && prs.length > 0) {
+                  prNumber = prs[0].number;
+                }
               }
             }
 
