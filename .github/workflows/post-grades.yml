@@ -100,12 +100,27 @@ jobs:
 
             const commentBody = commentLines.join("\n");
 
-            const pr = (github.event && github.event.workflow_run && github.event.workflow_run.pull_requests) ? github.event.workflow_run.pull_requests[0] : null;
-            if (!pr) {
+            let prNumber = null;
+            if (github.event.workflow_run.pull_requests && github.event.workflow_run.pull_requests.length > 0) {
+              prNumber = github.event.workflow_run.pull_requests[0].number;
+            } else {
+              const headOwner = github.event.workflow_run.head_repository.owner.login;
+              const headBranch = github.event.workflow_run.head_branch;
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: headOwner + ":" + headBranch,
+                state: 'open'
+              });
+              if (prs && prs.length > 0) {
+                prNumber = prs[0].number;
+              }
+            }
+
+            if (!prNumber) {
               console.log("No PR associated with the run; nothing to comment on.");
               return;
             }
-            const prNumber = pr.number;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
