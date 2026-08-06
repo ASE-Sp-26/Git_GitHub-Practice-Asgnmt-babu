@@ -1,11 +1,10 @@
 """
-Task 3: Calculator module starter
+Calculator Module - Task 3 Solution File
+Implement the functions below on the 'feature/calculator' branch.
 """
 
 def add(a, b):
-    # TODO: Return sum of a and b
-    pass
+    return a + b
 
 def multiply(a, b):
-    # TODO: Return product of a and b
-    pass
+    return a * b
