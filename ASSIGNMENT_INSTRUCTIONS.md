@@ -212,12 +212,16 @@ Run the autograder locally on your development machine at any time to ensure you
 python autograder.py
 ```
 
-### Step 2: Push your work to your GitHub fork
-Push all your commits, feature branches, and release tags to your forked repository on GitHub:
+### Step 2: Merge feature branches into main & push to GitHub
+Ensure all your completed feature branches are merged into your local `main` branch, then push all branches and tags to your forked repository:
 ```bash
+git checkout main
+git merge feature/calculator
+git merge feature/conflict-fix
 git push origin main --tags
 git push origin --all
 ```
+
 
 ### Step 3: Open a Pull Request (PR) to the Instructor Repository
 1. Navigate to your forked repository page on GitHub (`https://github.com/<your-github-username>/Git_GitHub-Practice-Asgnmt`).
