@@ -42,8 +42,9 @@ graph TD
 5. **Pushing to Fork**: The student commits and pushes their branch changes to their forked repository on GitHub.
 6. **PR Creation & Automated PR Feedback (Feedback Loop #2)**:
    - The student opens a Pull Request (PR) via the GitHub Web UI from their fork against the instructor repository's `main` branch.
-   - Opening or updating (`synchronize`) the PR triggers the GitHub Actions workflow [`.github/workflows/pr_evaluator.yml`](https://github.com/ClassroomAsignments/Git_GitHub-Practice-Asgnmt/blob/main/.github/workflows/pr_evaluator.yml).
-   - `pr_evaluator.yml` executes [`autograder.py`](https://github.com/ClassroomAsignments/Git_GitHub-Practice-Asgnmt/blob/main/autograder.py) (`python autograder.py --no-color > autograder_output.txt`) and automatically posts (or updates in-place) an itemized markdown score table directly in the PR conversation comments.
+   - Opening or updating (`synchronize`) the PR triggers the GitHub Actions 2-workflow evaluation system ([`.github/workflows/autograder-runner.yml`](file:///.github/workflows/autograder-runner.yml) & [`.github/workflows/post-grades.yml`](file:///.github/workflows/post-grades.yml)).
+   - `autograder-runner.yml` executes [`autograder.py`](https://github.com/ClassroomAsignments/Git_GitHub-Practice-Asgnmt/blob/main/autograder.py) (`python autograder.py --no-color > autograder_output.txt`) in a read-only sandbox, and `post-grades.yml` automatically posts (or updates in-place) an itemized markdown score table directly in the PR conversation comments.
+
 
 ---
 
