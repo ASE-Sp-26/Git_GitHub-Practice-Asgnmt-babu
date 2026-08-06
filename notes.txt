@@ -1,10 +1,6 @@
-# Assignment Notes & Release Checklist
-
-[x] Task 1: Student info added
-[x] Task 2: Gitignore updated
-[x] Task 3: Calculator implemented
-[x] Task 4: Merge conflict resolved
-[x] Task 5: Stash applied and release tagged v1.0.0
-[x] Task 6: GitHub reflection completed
-
-Note: Branch feature/final-live-pr-test created for live Web UI PR testing.
+[x] Task 1: Update student_info.json and Git config
+[x] Task 2: Configure .gitignore rules
+[x] Task 3: Create feature/calculator branch and implement calculator.py
+[x] Task 4: Resolve merge conflict on feature/conflict-fix
+[x] Task 5: Stash work, apply to notes.txt, and create release tag v1.0.0
+[x] Task 6: Complete reflection in GITHUB_REFLECTION.md
